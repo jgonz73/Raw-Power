@@ -301,98 +301,126 @@ ui <- navbarPage("CS424 Spring 2021 Project 2",
                  
 )
 
+#=====================================================================================================================================
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-  types <- c("Coal", "Oil", "Gas", "Nuclear", "Hydro", "Biomass", "Wind", "Solar",
-             "Geothermal", "Other")
   
-  reactdf18 <- reactive({
+  all18 <- reactive({
     df <- NULL
-    aggdf <- NULL
     if ("All" %in% input$icons) {
       df <- df18IL
-      #df <- df[, (names(df) %in% c("LAT", "LON", types))]
-    } 
-    else {
-      if ("Renewables" %in% input$icons) {
-        df <- subset(df18IL, df18IL$TOTAL_R > 0) # plants with renewable energy
-        #df <- df[, (names(df) %in% c("LAT", "LON", "HYRO", "BIOMASS", "WIND", "SOLAR", "GEOTHERMAL"))]
-      }
-      
-      if ("Non-renewables" %in% input$icons) {
-        if (is.null(df)) {
-          df <- subset(df18IL, df18IL$TOTAL_NR > 0)
-        } else {
-          tmp <- subset(df18IL, df18IL$TOTAL_NR > 0)
-          df <- rbind(tmp, df)
-        }
-        #df <- df[, (names(df) %in% c("LAT", "LON", "COAL", "OIL", "GAS", "NUCLEAR", "OTHER"))]
-      }
-      coaldf <- NULL
-      oildf <- NULL
-      gasdf <- NULL
-      nucleardf <- NULL
-      hydrodf <- NULL
-      biomassdf <- NULL
-      winddf <- NULL
-      solardf <- NULL
-      geothermaldf <- NULL
-      otherdf <- NULL
-      # add to aggregate df to see if they want to see specific energy sources
-      # if there are more than one checkbox checked, 
-      # add plants that produce extra sources to aggdf
-      if ("Coal" %in% input$icons) {
-        coaldf <- subset(df18IL, df18IL$COAL > 0)
-        #coaldf <- coaldf[, (names(coaldf) %in% c("LAT", "LON", "COAL"))]
-      } 
-      if ("Oil" %in% input$icons) {
-        oildf <- subset(df18IL, df18IL$OIL > 0)
-      }
-      if ("Gas" %in% input$icons) {
-        gasdf <- subset(df18IL, df18IL$GAS > 0)
-      }
-      if ("Nuclear" %in% input$icons) {
-        nucleardf <- subset(df18IL, df18IL$NUCLEAR > 0)
-      }
-      if ("Hydro" %in% input$icons) {
-        hydrodf <- subset(df18IL, df18IL$HYDRO > 0)
-      }
-      if ("Biomass" %in% input$icons) {
-        biomassdf <- subset(df18IL, df18IL$BIOMASS > 0)
-      }
-      if ("Wind" %in% input$icons) {
-        winddf <- subset(df18IL, df18IL$WIND > 0)
-      }
-      if ("Solar" %in% input$icons) {
-        solardf <- subset(df18IL, df18IL$SOLAR > 0)
-      }
-      if ("Geothermal" %in% input$icons) {
-        geothermaldf <- subset(df18IL, df18IL$GEOTHERMAL > 0)
-        # Illinois does not produce any geothermal energy
-      }
-      if ("Other" %in% input$icons) {
-        otherdf <- subset(df18IL, df18IL$OTHER > 0)
-      }
-      
-      aggdf <- rbind(coaldf, oildf, gasdf, nucleardf, hydrodf, biomassdf, winddf, solardf, geothermaldf, otherdf)
     }
-    
-    # Add aggdf to df if df is valid
-    if (is.null(df)) {
-      result <- aggdf
-    } else if (is.null(aggdf)) {
-      result <- df
+    return (df)
+  }) 
+  
+  #renew18 <- reactive({
+  #  df <- NULL
+  #  if ("Renewables" %in% input$icons) {
+  #    df <- subset(df18IL, df18IL$TOTAL_R > 0)
+  #  }
+  #  return (df)
+  #})
+  
+  #nonrenew18 <- reactive({
+  #  df <- NULL
+  #  if ("Non-renewables" %in% input$icons) {
+  #    df <- subset(df18IL, df18IL$TOTAL_NR > 0)
+  #  }
+  #  return (df)
+  #})
+  
+  # Get reactive data from selected items in checklist based on category and source
+  coal18 <- reactive({
+    coaldf <- NULL
+    if ("Coal" %in% input$icons || "All" %in% input$icons || "Non-renewables" %in% input$icons) {
+      coaldf <- subset(df18IL, df18IL$COAL > 0)
     } 
-    else {
-      result <- rbind(aggdf, df)
-    }
     
-    return(result)
+    return(coaldf)
   })
+  
+  oil18 <- reactive({
+    oildf <- NULL
+    if ("Oil" %in% input$icons || "All" %in% input$icons || "Non-renewables" %in% input$icons) {
+      oildf <- subset(df18IL, df18IL$OIL > 0) 
+    }
+    return (oildf)
+  })
+  
+  gas18 <- reactive({
+    gasdf <- NULL
+    if ("Gas" %in% input$icons || "All" %in% input$icons || "Non-renewables" %in% input$icons) {
+      gasdf <- subset(df18IL, df18IL$GAS > 0) 
+    }
+    return (gasdf)
+  })
+  
+  nuclear18 <- reactive({
+    nucleardf <- NULL
+    if ("Nuclear" %in% input$icons || "All" %in% input$icons || "Non-renewables" %in% input$icons) {
+      nucleardf <- subset(df18IL, df18IL$NUCLEAR > 0) 
+    }
+    return (nucleardf)
+  })
+  
+  hydro18 <- reactive({
+    hydrodf <- NULL
+    if ("Hydro" %in% input$icons || "All" %in% input$icons || "Renewables" %in% input$icons) {
+      hydrodf <- subset(df18IL, df18IL$HYDRO > 0) 
+    }
+    return (hydrodf)
+  })
+  
+  biomass18 <- reactive({
+    biomassdf <- NULL
+    if ("Biomass" %in% input$icons || "All" %in% input$icons || "Renewables" %in% input$icons) {
+      biomassdf <- subset(df18IL, df18IL$BIOMASS > 0) 
+    }
+    return (biomassdf)
+  })
+  
+  wind18 <- reactive({
+    winddf <- NULL
+    if ("Wind" %in% input$icons || "All" %in% input$icons || "Renewables" %in% input$icons) {
+      winddf <- subset(df18IL, df18IL$WIND > 0) 
+    }
+    return (winddf)
+  })
+  
+  solar18 <- reactive({
+    solardf <- NULL
+    if ("Solar" %in% input$icons || "All" %in% input$icons || "Renewables" %in% input$icons) {
+      solardf <- subset(df18IL, df18IL$SOLAR > 0) 
+    }
+    return (solardf)
+  })
+  
+  geothermal18 <- reactive({
+    geothermaldf <- NULL
+    if ("Geothermal" %in% input$icons || "All" %in% input$icons || "Renewables" %in% input$icons) {
+      geothermaldf <- subset(df18IL, df18IL$GEOTHERMAL > 0) 
+    }
+    return (geothermaldf)
+  })
+  
+  other18 <- reactive({
+    otherdf <- NULL
+    if ("Other" %in% input$icons || "All" %in% input$icons || "Non-renewables" %in% input$icons) {
+      otherdf <- subset(df18IL, df18IL$OTHER > 0) 
+    }
+    return (otherdf)
+  })
+  
+#=====================================================================================================================================
+  
+  types <- c("Coal", "Oil", "Gas", "Nuclear", "Hydro", "Biomass", "Wind", "Solar",
+             "Geothermal", "Other")
   
   pal <- colorFactor(palette = c("black", "grey40", "midnightblue", "chartreuse4", "deepskyblue", "red2", "lightblue",
                                  "gold", "brown", "burlywood"), 
                      levels = types)
+  
+  # Static initial leaflet, has observer for checkbox presses
   output$test <- renderLeaflet({
     leaflet() %>%
       addTiles() %>%
@@ -402,18 +430,96 @@ server <- function(input, output) {
   })
   
   observe({
-    if (input$icons == "All" || !length(input$icons)) {
-      reactdf18 <- df18IL              
-    } else {
-      reactdf18 <- reactdf18()
-    }
-    leafletProxy(mapId="test", data=reactdf18()) %>%
-      clearMarkers() %>%
-      # Try adding circle markers for each source one by one independently instead of aggregating
-      # add reactive values for each energy source so we can add circle markers one by one
-      addCircleMarkers(data=reactdf18, lng=reactdf18$LON, lat=reactdf18$LAT, radius=7,
-                       color=~pal(types), stroke=FALSE, fillOpacity=0.5, label=paste("Source=", types)) 
     
+    # Reset the map first to account for deselecting of checkboxes?
+    leafletProxy(mapId="test", data=df18IL) %>%
+      clearMarkers()
+    
+    # check if All (default) is checked MIGHT NOT NEED THIS ****
+    alldf <- all18()
+    
+    
+    # if nothing is checked, then just clear the markers
+    if (is.null(input$icons)) {
+        
+    } else {
+        # Get necessary data that was selected, Part I of event handling
+        coaldf <- coal18()
+        oildf <- oil18()
+        gasdf <- gas18()
+        nucleardf <- nuclear18()
+        hydrodf <- hydro18()
+        biomassdf <- biomass18()
+        winddf <- wind18()
+        solardf <- solar18()
+        geothermaldf <- geothermal18()
+        otherdf <- other18()
+        
+        # Try adding circle markers for each source one by one independently instead of aggregating
+        # add reactive values for each energy source so we can add circle markers one by one
+        # Part II of event handling
+      
+        if (!is.null(coaldf)) {
+          leafletProxy(mapId="test", data=coaldf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=coaldf, lng=coaldf$LON, lat=coaldf$LAT, radius=7,
+                           color='black', stroke=FALSE, fillOpacity=1, label=paste("Source= Coal")) 
+        } 
+        
+        if (!is.null(oildf)) {
+          leafletProxy(mapId="test", data=oildf) %>% # clearMarkers() %>%
+            addCircleMarkers(data=oildf, lng=oildf$LON, lat=oildf$LAT, radius=7,
+                             color='grey', stroke=FALSE, fillOpacity=1, label=paste("Source= Oil")) 
+        }
+        
+        if (!is.null(gasdf)) {
+          leafletProxy(mapId="test", data=gasdf) %>% # clearMarkers() %>%
+            addCircleMarkers(data=gasdf, lng=gasdf$LON, lat=gasdf$LAT, radius=7,
+                             color='midnightblue', stroke=FALSE, fillOpacity=1, label=paste("Source= Gas")) 
+        }
+        
+        if (!is.null(nucleardf)) {
+          leafletProxy(mapId="test", data=nucleardf) %>% # clearMarkers() %>%
+            addCircleMarkers(data=nucleardf, lng=nucleardf$LON, lat=nucleardf$LAT, radius=7,
+                             color='green', stroke=FALSE, fillOpacity=1, label=paste("Source= Nuclear")) 
+        }
+        
+        if (!is.null(hydrodf)) {
+          leafletProxy(mapId="test", data=hydrodf) %>% # clearMarkers() %>%
+            addCircleMarkers(data=hydrodf, lng=hydrodf$LON, lat=hydrodf$LAT, radius=7,
+                             color='deepskyblue', stroke=FALSE, fillOpacity=1, label=paste("Source= Hydro")) 
+        }
+        
+        if (!is.null(biomassdf)) {
+          leafletProxy(mapId="test", data=biomassdf) %>% # clearMarkers() %>%
+            addCircleMarkers(data=biomassdf, lng=biomassdf$LON, lat=biomassdf$LAT, radius=7,
+                             color='red', stroke=FALSE, fillOpacity=1, label=paste("Source= Biomass")) 
+        }
+        
+        if (!is.null(winddf)) {
+          leafletProxy(mapId="test", data=winddf) %>% # clearMarkers() %>%
+            addCircleMarkers(data=winddf, lng=winddf$LON, lat=winddf$LAT, radius=7,
+                             color='lightblue', stroke=FALSE, fillOpacity=1, label=paste("Source= Wind")) 
+        }
+        
+        if (!is.null(solardf)) {
+          leafletProxy(mapId="test", data=solardf) %>% # clearMarkers() %>%
+            addCircleMarkers(data=solardf, lng=solardf$LON, lat=solardf$LAT, radius=7,
+                             color='gold', stroke=FALSE, fillOpacity=1, label=paste("Source= Solar")) 
+        }
+        
+        if (!is.null(geothermaldf)) {
+          leafletProxy(mapId="test", data=geothermaldf) %>% # clearMarkers() %>%
+            addCircleMarkers(data=geothermaldf, lng=geothermaldf$LON, lat=geothermaldf$LAT, radius=7,
+                             color='brown', stroke=FALSE, fillOpacity=1, label=paste("Source= Geothermal")) 
+        }
+        
+        if (!is.null(otherdf)) {
+          leafletProxy(mapId="test", data=otherdf) %>% # clearMarkers() %>%
+            addCircleMarkers(data=otherdf, lng=otherdf$LON, lat=otherdf$LAT, radius=7,
+                             color='burlywood', stroke=FALSE, fillOpacity=1, label=paste("Source= Other")) 
+        }
+        
+    }
   })
   
   observeEvent(input$zoomer, {
