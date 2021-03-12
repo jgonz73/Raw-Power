@@ -394,17 +394,30 @@ server <- function(input, output) {
                                  "gold", "brown", "burlywood"), 
                      levels = types)
   output$test <- renderLeaflet({
+    leaflet() %>%
+      addTiles() %>%
+      setView(lat=39.8331, lng=-88.8985, zoom=6) %>%
+      addLegend("bottomright", pal=pal, values=types, title="Energy Sources", opacity=1) %>%
+      addControl(actionButton("zoomer", "Reset"), position="topright")
+  })
+  
+  observe({
     if (input$icons == "All" || !length(input$icons)) {
       reactdf18 <- df18IL              
     } else {
       reactdf18 <- reactdf18()
     }
-    
-    leaflet() %>%
-      addTiles() %>%
+    leafletProxy(mapId="test", data=reactdf18()) %>%
+      clearMarkers() %>%
+      # Try adding circle markers for each source one by one independently instead of aggregating
+      # add reactive values for each energy source so we can add circle markers one by one
       addCircleMarkers(data=reactdf18, lng=reactdf18$LON, lat=reactdf18$LAT, radius=7,
-                       color=~pal(types), stroke=FALSE, fillOpacity=0.5, label=paste("Source=", types)) %>%
-      addLegend("bottomright", pal=pal, values=types, title="Energy Sources", opacity=1)
+                       color=~pal(types), stroke=FALSE, fillOpacity=0.5, label=paste("Source=", types)) 
+    
+  })
+  
+  observeEvent(input$zoomer, {
+    leafletProxy("test") %>% setView(lat=39.8331, lng=-88.8985, zoom=6)
   })
   
 }
