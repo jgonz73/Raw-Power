@@ -9,6 +9,7 @@
 
 
 library(shiny)
+library(shinydashboard)
 library(tidyverse)
 library(sf)
 library(readxl)
@@ -285,6 +286,16 @@ df18IL <- subset(df18, df18$STATE == 'IL')
 df10IL <- subset(df10, df10$STATE == 'IL')
 df00IL <- subset(df00, df00$STATE == 'IL')
 
+# States
+state <- state.name
+state <- sort(state)
+statedf <- read.csv("statelatlong.csv")
+
+# Years
+years <- c(2000, 2010, 2018)
+
+leaflets <- c("Leaflet 1", "Leaflet 2", "Leaflet 3")
+
 #=====================================================================================================================================
 
 # Define UI for application that draws a histogram
@@ -308,10 +319,51 @@ ui <- navbarPage("CS424 Spring 2021 Project 2",
          tabPanel("Compare 2 States Over 3 Different Years",
                   fluidRow(
                     column(6,
-                           leafletOutput("leftleaflet"),
+                           fluidRow( 
+                             box(title = "Leaflet 1", status="primary", width=12, 
+                                         leafletOutput("leftleaflet"),
+                                         selectInput("leafletL", "Change leaflet type", leaflets, selected = "Leaflet 1")
+                             )
+                           ),
+                           fluidRow(
+                             box(status="primary", width=12, solidHeader=TRUE,
+                               selectInput("stateLeft", "Select the state to visualize", state, selected = "Illinois"),
+                               selectInput("yearLeft", "Select year", years, selected=2000)
+                             )
+                           ),
+                           fluidRow( 
+                             box(title = "Select Energy Sources", status="primary", width=12, 
+                                 checkboxGroupInput("iconsLeft", "Select energy sources to display:",
+                                      choiceNames = sources,
+                                      choiceValues = sources,
+                                      selected = 'All',
+                                      inline=TRUE)
+                             )
+                           )
                     ),
+                    #column(2),
                     column(6,
-                           leafletOutput("rightleaflet"),
+                         fluidRow( 
+                           box(title = "Leaflet 2", status="primary", width=12, 
+                                   leafletOutput("rightleaflet"),
+                                   selectInput("leafletR", "Change leaflet type", leaflets, selected = "Leaflet 1")
+                           )
+                         ),
+                         fluidRow(
+                           box(status="primary", width=12,
+                             selectInput("stateRight", "Select the state to visualize", state, selected = "Illinois"),
+                             selectInput("yearRight", "Select year", years, selected=2018)
+                           )
+                         ),
+                         fluidRow( 
+                           box(title = "Select Energy Sources", status="primary", width=12, 
+                               checkboxGroupInput("iconsRight", "Select energy sources to display:",
+                                    choiceNames = sources,
+                                    choiceValues = sources,
+                                    selected = 'All',
+                                    inline=TRUE)
+                           )
+                         )
                     )
                   ),
          ),
@@ -437,7 +489,474 @@ server <- function(input, output) {
 #=====================================================================================================================================
   # For part 2 with States and Years  
   
-
+  # LEFT SIDE
+  allL <- reactive({
+    df <- NULL
+    if ("All" %in% input$iconsLeft) {
+      if (input$yearLeft == 2000) {
+        df <- subset(df00, (STATE %in% inp))
+      } else if (input$yearLeft == 2010) {
+        df <- subset(df10, (STATE %in% inp))
+      } else {
+        df <- subset(df18, (STATE %in% inp))
+      }
+      
+    }
+    return (df)
+  }) 
+  
+  #renew18 <- reactive({
+  #  df <- NULL
+  #  if ("Renewables" %in% input$icons) {
+  #    df <- subset(df18IL, df18IL$TOTAL_R > 0)
+  #  }
+  #  return (df)
+  #})
+  
+  #nonrenew18 <- reactive({
+  #  df <- NULL
+  #  if ("Non-renewables" %in% input$icons) {
+  #    df <- subset(df18IL, df18IL$TOTAL_NR > 0)
+  #  }
+  #  return (df)
+  #})
+  
+  # Get reactive data from selected items in checklist based on category and source
+  coalL <- reactive({
+    coaldf <- NULL
+    if ("Coal" %in% input$iconsLeft || "All" %in% input$iconsLeft || "Non-renewables" %in% input$iconsLeft) {
+      # Accounts for state input
+      inp <- state.abb[which(state.name==input$stateLeft)]
+      
+      # Accounts for year input
+      if (input$yearLeft == 2000) {
+        coaldf <- subset(df00, (STATE %in% inp))
+      } else if (input$yearLeft == 2010) {
+        coaldf <- subset(df10, (STATE %in% inp))
+      } else {
+        coaldf <- subset(df18, (STATE %in% inp))
+      }
+      
+      coaldf <- subset(coaldf, coaldf$COAL > 0)
+    } 
+    
+    return(coaldf)
+  })
+  
+  oilL <- reactive({
+    oildf <- NULL
+    if ("Oil" %in% input$iconsLeft || "All" %in% input$iconsLeft || "Non-renewables" %in% input$iconsLeft) {
+      # Accounts for state input
+      inp <- state.abb[which(state.name==input$stateLeft)]
+      
+      # Accounts for year input
+      if (input$yearLeft == 2000) {
+        oildf <- subset(df00, (STATE %in% inp))
+      } else if (input$yearLeft == 2010) {
+        oildf <- subset(df10, (STATE %in% inp))
+      } else {
+        oildf <- subset(df18, (STATE %in% inp))
+      }
+      
+      oildf <- subset(oildf, oildf$OIL > 0) 
+    }
+    return (oildf)
+  })
+  
+  gasL <- reactive({
+    gasdf <- NULL
+    if ("Gas" %in% input$iconsLeft || "All" %in% input$iconsLeft || "Non-renewables" %in% input$iconsLeft) {
+      # Accounts for state input
+      inp <- state.abb[which(state.name==input$stateLeft)]
+      
+      # Accounts for year input
+      if (input$yearLeft == 2000) {
+        gasdf <- subset(df00, (STATE %in% inp))
+      } else if (input$yearLeft == 2010) {
+        gasdf <- subset(df10, (STATE %in% inp))
+      } else {
+        gasdf <- subset(df18, (STATE %in% inp))
+      }
+      
+      gasdf <- subset(gasdf, gasdf$GAS > 0) 
+    }
+    return (gasdf)
+  })
+  
+  nuclearL <- reactive({
+    nucleardf <- NULL
+    if ("Nuclear" %in% input$iconsLeft || "All" %in% input$iconsLeft || "Non-renewables" %in% input$iconsLeft) {
+      # Accounts for state input
+      inp <- state.abb[which(state.name==input$stateLeft)]
+      
+      # Accounts for year input
+      if (input$yearLeft == 2000) {
+        nucleardf <- subset(df00, (STATE %in% inp))
+      } else if (input$yearLeft == 2010) {
+        nucleardf <- subset(df10, (STATE %in% inp))
+      } else {
+        nucleardf <- subset(df18, (STATE %in% inp))
+      }
+      
+      nucleardf <- subset(nucleardf, nucleardf$NUCLEAR > 0) 
+    }
+    return (nucleardf)
+  })
+  
+  hydroL <- reactive({
+    hydrodf <- NULL
+    if ("Hydro" %in% input$iconsLeft || "All" %in% input$iconsLeft || "Renewables" %in% input$iconsLeft) {
+      # Accounts for state input
+      inp <- state.abb[which(state.name==input$stateLeft)]
+      
+      # Accounts for year input
+      if (input$yearLeft == 2000) {
+        hydrodf <- subset(df00, (STATE %in% inp))
+      } else if (input$yearLeft == 2010) {
+        hydrodf <- subset(df10, (STATE %in% inp))
+      } else {
+        hydrodf <- subset(df18, (STATE %in% inp))
+      }
+      
+      hydrodf <- subset(hydrodf, hydrodf$HYDRO > 0) 
+    }
+    return (hydrodf)
+  })
+  
+  biomassL <- reactive({
+    biomassdf <- NULL
+    if ("Biomass" %in% input$iconsLeft || "All" %in% input$iconsLeft || "Renewables" %in% input$iconsLeft) {
+      # Accounts for state input
+      inp <- state.abb[which(state.name==input$stateLeft)]
+      
+      # Accounts for year input
+      if (input$yearLeft == 2000) {
+        biomassdf <- subset(df00, (STATE %in% inp))
+      } else if (input$yearLeft == 2010) {
+        biomassdf <- subset(df10, (STATE %in% inp))
+      } else {
+        biomassdf <- subset(df18, (STATE %in% inp))
+      }
+      
+      biomassdf <- subset(biomassdf, biomassdf$BIOMASS > 0) 
+    }
+    return (biomassdf)
+  })
+  
+  windL <- reactive({
+    winddf <- NULL
+    if ("Wind" %in% input$iconsLeft || "All" %in% input$iconsLeft || "Renewables" %in% input$iconsLeft) {
+      # Accounts for state input
+      inp <- state.abb[which(state.name==input$stateLeft)]
+      
+      # Accounts for year input
+      if (input$yearLeft == 2000) {
+        winddf <- subset(df00, (STATE %in% inp))
+      } else if (input$yearLeft == 2010) {
+        winddf <- subset(df10, (STATE %in% inp))
+      } else {
+        winddf <- subset(df18, (STATE %in% inp))
+      }
+      
+      winddf <- subset(winddf, winddf$WIND > 0) 
+    }
+    return (winddf)
+  })
+  
+  solarL <- reactive({
+    solardf <- NULL
+    if ("Solar" %in% input$iconsLeft || "All" %in% input$iconsLeft || "Renewables" %in% input$iconsLeft) {
+      # Accounts for state input
+      inp <- state.abb[which(state.name==input$stateLeft)]
+      
+      # Accounts for year input
+      if (input$yearLeft == 2000) {
+        solardf <- subset(df00, (STATE %in% inp))
+      } else if (input$yearLeft == 2010) {
+        solardf <- subset(df10, (STATE %in% inp))
+      } else {
+        solardf <- subset(df18, (STATE %in% inp))
+      }
+      
+      solardf <- subset(solardf, solardf$SOLAR > 0) 
+    }
+    return (solardf)
+  })
+  
+  geothermalL <- reactive({
+    geothermaldf <- NULL
+    if ("Geothermal" %in% input$iconsLeft || "All" %in% input$iconsLeft || "Renewables" %in% input$iconsLeft) {
+      # Accounts for state input
+      inp <- state.abb[which(state.name==input$stateLeft)]
+      
+      # Accounts for year input
+      if (input$yearLeft == 2000) {
+        geothermaldf <- subset(df00, (STATE %in% inp))
+      } else if (input$yearLeft == 2010) {
+        geothermaldf <- subset(df10, (STATE %in% inp))
+      } else {
+        geothermaldf <- subset(df18, (STATE %in% inp))
+      }
+      
+      geothermaldf <- subset(geothermaldf, geothermaldf$GEOTHERMAL > 0) 
+    }
+    return (geothermaldf)
+  })
+  
+  otherL <- reactive({
+    otherdf <- NULL
+    if ("Other" %in% input$iconsLeft || "All" %in% input$iconsLeft || "Non-renewables" %in% input$iconsLeft) {
+      # Accounts for state input
+      inp <- state.abb[which(state.name==input$stateLeft)]
+      
+      # Accounts for year input
+      if (input$yearLeft == 2000) {
+        otherdf <- subset(df00, (STATE %in% inp))
+      } else if (input$yearLeft == 2010) {
+        otherdf <- subset(df10, (STATE %in% inp))
+      } else {
+        otherdf <- subset(df18, (STATE %in% inp))
+      }
+      
+      otherdf <- subset(otherdf, otherdf$OTHER > 0) 
+    }
+    return (otherdf)
+  })
+  
+#=====================================================================================================================================
+  
+  # RIGHT SIDE  
+  allR <- reactive({
+    df <- NULL
+    if ("All" %in% input$iconsRight) {
+      if (input$yearRight == 2000) {
+        df <- subset(df00, (STATE %in% inp))
+      } else if (input$yearRight == 2010) {
+        df <- subset(df10, (STATE %in% inp))
+      } else {
+        df <- subset(df18, (STATE %in% inp))
+      }
+    }
+    return (df)
+  }) 
+  
+  #renew18 <- reactive({
+  #  df <- NULL
+  #  if ("Renewables" %in% input$icons) {
+  #    df <- subset(df18IL, df18IL$TOTAL_R > 0)
+  #  }
+  #  return (df)
+  #})
+  
+  #nonrenew18 <- reactive({
+  #  df <- NULL
+  #  if ("Non-renewables" %in% input$icons) {
+  #    df <- subset(df18IL, df18IL$TOTAL_NR > 0)
+  #  }
+  #  return (df)
+  #})
+  
+  # Get reactive data from selected items in checklist based on category and source
+  coalR <- reactive({
+    coaldf <- NULL
+    if ("Coal" %in% input$iconsRight || "All" %in% input$iconsRight || "Non-renewables" %in% input$iconsRight) {
+      # Accounts for state input
+      inp <- state.abb[which(state.name==input$stateRight)]
+      
+      # Accounts for year input
+      if (input$yearRight == 2000) {
+        coaldf <- subset(df00, (STATE %in% inp))
+      } else if (input$yearRight == 2010) {
+        coaldf <- subset(df10, (STATE %in% inp))
+      } else {
+        coaldf <- subset(df18, (STATE %in% inp))
+      }
+      
+      coaldf <- subset(coaldf, coaldf$COAL > 0)
+    } 
+    
+    return(coaldf)
+  })
+  
+  oilR <- reactive({
+    oildf <- NULL
+    if ("Oil" %in% input$iconsRight || "All" %in% input$iconsRight || "Non-renewables" %in% input$iconsRight) {
+      # Accounts for state input
+      inp <- state.abb[which(state.name==input$stateRight)]
+      
+      # Accounts for year input
+      if (input$yearRight == 2000) {
+        oildf <- subset(df00, (STATE %in% inp))
+      } else if (input$yearRight == 2010) {
+        oildf <- subset(df10, (STATE %in% inp))
+      } else {
+        oildf <- subset(df18, (STATE %in% inp))
+      }
+      
+      oildf <- subset(oildf, oildf$OIL > 0) 
+    }
+    return (oildf)
+  })
+  
+  gasR <- reactive({
+    gasdf <- NULL
+    if ("Gas" %in% input$iconsRight || "All" %in% input$iconsRight || "Non-renewables" %in% input$iconsRight) {
+      # Accounts for state input
+      inp <- state.abb[which(state.name==input$stateRight)]
+      
+      # Accounts for year input
+      if (input$yearRight == 2000) {
+        gasdf <- subset(df00, (STATE %in% inp))
+      } else if (input$yearRight == 2010) {
+        gasdf <- subset(df10, (STATE %in% inp))
+      } else {
+        gasdf <- subset(df18, (STATE %in% inp))
+      }
+      
+      gasdf <- subset(gasdf, gasdf$GAS > 0) 
+    }
+    return (gasdf)
+  })
+  
+  nuclearR <- reactive({
+    nucleardf <- NULL
+    if ("Nuclear" %in% input$iconsRight || "All" %in% input$iconsRight || "Non-renewables" %in% input$iconsRight) {
+      # Accounts for state input
+      inp <- state.abb[which(state.name==input$stateRight)]
+      
+      # Accounts for year input
+      if (input$yearRight == 2000) {
+        nucleardf <- subset(df00, (STATE %in% inp))
+      } else if (input$yearRight == 2010) {
+        nucleardf <- subset(df10, (STATE %in% inp))
+      } else {
+        nucleardf <- subset(df18, (STATE %in% inp))
+      }
+      
+      nucleardf <- subset(nucleardf, nucleardf$NUCLEAR > 0) 
+    }
+    return (nucleardf)
+  })
+  
+  hydroR <- reactive({
+    hydrodf <- NULL
+    if ("Hydro" %in% input$iconsRight || "All" %in% input$iconsRight || "Renewables" %in% input$iconsRight) {
+      # Accounts for state input
+      inp <- state.abb[which(state.name==input$stateRight)]
+      
+      # Accounts for year input
+      if (input$yearRight == 2000) {
+        hydrodf <- subset(df00, (STATE %in% inp))
+      } else if (input$yearRight == 2010) {
+        hydrodf <- subset(df10, (STATE %in% inp))
+      } else {
+        hydrodf <- subset(df18, (STATE %in% inp))
+      }
+      
+      hydrodf <- subset(hydrodf, hydrodf$HYDRO > 0) 
+    }
+    return (hydrodf)
+  })
+  
+  biomassR <- reactive({
+    biomassdf <- NULL
+    if ("Biomass" %in% input$iconsRight || "All" %in% input$iconsRight || "Renewables" %in% input$iconsRight) {
+      # Accounts for state input
+      inp <- state.abb[which(state.name==input$stateRight)]
+      
+      # Accounts for year input
+      if (input$yearRight == 2000) {
+        biomassdf <- subset(df00, (STATE %in% inp))
+      } else if (input$yearRight == 2010) {
+        biomassdf <- subset(df10, (STATE %in% inp))
+      } else {
+        biomassdf <- subset(df18, (STATE %in% inp))
+      }
+      
+      biomassdf <- subset(biomassdf, biomassdf$BIOMASS > 0) 
+    }
+    return (biomassdf)
+  })
+  
+  windR <- reactive({
+    winddf <- NULL
+    if ("Wind" %in% input$iconsRight || "All" %in% input$iconsRight || "Renewables" %in% input$iconsRight) {
+      # Accounts for state input
+      inp <- state.abb[which(state.name==input$stateRight)]
+      
+      # Accounts for year input
+      if (input$yearRight == 2000) {
+        winddf <- subset(df00, (STATE %in% inp))
+      } else if (input$yearRight == 2010) {
+        winddf <- subset(df10, (STATE %in% inp))
+      } else {
+        winddf <- subset(df18, (STATE %in% inp))
+      }
+      
+      winddf <- subset(winddf, winddf$WIND > 0) 
+    }
+    return (winddf)
+  })
+  
+  solarR <- reactive({
+    solardf <- NULL
+    if ("Solar" %in% input$iconsRight || "All" %in% input$iconsRight || "Renewables" %in% input$iconsRight) {
+      # Accounts for state input
+      inp <- state.abb[which(state.name==input$stateRight)]
+      
+      # Accounts for year input
+      if (input$yearRight == 2000) {
+        solardf <- subset(df00, (STATE %in% inp))
+      } else if (input$yearRight == 2010) {
+        solardf <- subset(df10, (STATE %in% inp))
+      } else {
+        solardf <- subset(df18, (STATE %in% inp))
+      }
+      
+      solardf <- subset(solardf, solardf$SOLAR > 0) 
+    }
+    return (solardf)
+  })
+  
+  geothermalR <- reactive({
+    geothermaldf <- NULL
+    if ("Geothermal" %in% input$iconsRight || "All" %in% input$iconsRight || "Renewables" %in% input$iconsRight) {
+      # Accounts for state input
+      inp <- state.abb[which(state.name==input$stateRight)]
+      
+      # Accounts for year input
+      if (input$yearRight == 2000) {
+        geothermaldf <- subset(df00, (STATE %in% inp))
+      } else if (input$yearRight == 2010) {
+        geothermaldf <- subset(df10, (STATE %in% inp))
+      } else {
+        geothermaldf <- subset(df18, (STATE %in% inp))
+      }
+      
+      geothermaldf <- subset(geothermaldf, geothermaldf$GEOTHERMAL > 0) 
+    }
+    return (geothermaldf)
+  })
+  
+  otherR <- reactive({
+    otherdf <- NULL
+    if ("Other" %in% input$iconsRight || "All" %in% input$iconsRight || "Non-renewables" %in% input$iconsRight) {
+      # Accounts for state input
+      inp <- state.abb[which(state.name==input$stateRight)]
+      
+      # Accounts for year input
+      if (input$yearRight == 2000) {
+        otherdf <- subset(df00, (STATE %in% inp))
+      } else if (input$yearRight == 2010) {
+        otherdf <- subset(df10, (STATE %in% inp))
+      } else {
+        otherdf <- subset(df18, (STATE %in% inp))
+      }
+      
+      otherdf <- subset(otherdf, otherdf$OTHER > 0) 
+    }
+    return (otherdf)
+  })
 #=====================================================================================================================================
   # Display Output
   types <- c("Coal", "Oil", "Gas", "Nuclear", "Hydro", "Biomass", "Wind", "Solar",
@@ -447,6 +966,7 @@ server <- function(input, output) {
                                  "gold", "brown", "burlywood"), 
                      levels = types)
   
+  # PART 1 ILLINOIS *****************************************
   # Static initial leaflet, has observer for checkbox presses
   output$test <- renderLeaflet({
     leaflet() %>%
@@ -494,55 +1014,55 @@ server <- function(input, output) {
         
         if (!is.null(oildf)) {
           leafletProxy(mapId="test", data=oildf) %>% # clearMarkers() %>%
-            addCircleMarkers(data=oildf, lng=oildf$LON, lat=oildf$LAT, radius=7,
+            addCircleMarkers(data=oildf, lng=(oildf$LON+0.001), lat=oildf$LAT, radius=7,
                              color='grey', stroke=FALSE, fillOpacity=1, label=paste("Source= Oil")) 
         }
         
         if (!is.null(gasdf)) {
           leafletProxy(mapId="test", data=gasdf) %>% # clearMarkers() %>%
-            addCircleMarkers(data=gasdf, lng=gasdf$LON, lat=gasdf$LAT, radius=7,
+            addCircleMarkers(data=gasdf, lng=(gasdf$LON-0.001), lat=gasdf$LAT, radius=7,
                              color='midnightblue', stroke=FALSE, fillOpacity=1, label=paste("Source= Gas")) 
         }
         
         if (!is.null(nucleardf)) {
           leafletProxy(mapId="test", data=nucleardf) %>% # clearMarkers() %>%
-            addCircleMarkers(data=nucleardf, lng=nucleardf$LON, lat=nucleardf$LAT, radius=7,
+            addCircleMarkers(data=nucleardf, lng=nucleardf$LON, (lat=nucleardf$LAT+0.001), radius=7,
                              color='green', stroke=FALSE, fillOpacity=1, label=paste("Source= Nuclear")) 
         }
         
         if (!is.null(hydrodf)) {
           leafletProxy(mapId="test", data=hydrodf) %>% # clearMarkers() %>%
-            addCircleMarkers(data=hydrodf, lng=hydrodf$LON, lat=hydrodf$LAT, radius=7,
+            addCircleMarkers(data=hydrodf, lng=hydrodf$LON, (lat=hydrodf$LAT-0.001), radius=7,
                              color='deepskyblue', stroke=FALSE, fillOpacity=1, label=paste("Source= Hydro")) 
         }
         
         if (!is.null(biomassdf)) {
           leafletProxy(mapId="test", data=biomassdf) %>% # clearMarkers() %>%
-            addCircleMarkers(data=biomassdf, lng=biomassdf$LON, lat=biomassdf$LAT, radius=7,
+            addCircleMarkers(data=biomassdf, lng=(biomassdf$LON+0.002), lat=biomassdf$LAT, radius=7,
                              color='red', stroke=FALSE, fillOpacity=1, label=paste("Source= Biomass")) 
         }
         
         if (!is.null(winddf)) {
           leafletProxy(mapId="test", data=winddf) %>% # clearMarkers() %>%
-            addCircleMarkers(data=winddf, lng=winddf$LON, lat=winddf$LAT, radius=7,
+            addCircleMarkers(data=winddf, (lng=winddf$LON-0.002), lat=winddf$LAT, radius=7,
                              color='lightblue', stroke=FALSE, fillOpacity=1, label=paste("Source= Wind")) 
         }
         
         if (!is.null(solardf)) {
           leafletProxy(mapId="test", data=solardf) %>% # clearMarkers() %>%
-            addCircleMarkers(data=solardf, lng=solardf$LON, lat=solardf$LAT, radius=7,
+            addCircleMarkers(data=solardf, lng=solardf$LON, (lat=solardf$LAT+0.002), radius=7,
                              color='gold', stroke=FALSE, fillOpacity=1, label=paste("Source= Solar")) 
         }
         
         if (!is.null(geothermaldf)) {
           leafletProxy(mapId="test", data=geothermaldf) %>% # clearMarkers() %>%
-            addCircleMarkers(data=geothermaldf, lng=geothermaldf$LON, lat=geothermaldf$LAT, radius=7,
+            addCircleMarkers(data=geothermaldf, lng=geothermaldf$LON, (lat=geothermaldf$LAT-0.002), radius=7,
                              color='brown', stroke=FALSE, fillOpacity=1, label=paste("Source= Geothermal")) 
         }
         
         if (!is.null(otherdf)) {
           leafletProxy(mapId="test", data=otherdf) %>% # clearMarkers() %>%
-            addCircleMarkers(data=otherdf, lng=otherdf$LON, lat=otherdf$LAT, radius=7,
+            addCircleMarkers(data=otherdf, (lng=otherdf$LON+0.001), (lat=otherdf$LAT+0.001), radius=7,
                              color='burlywood', stroke=FALSE, fillOpacity=1, label=paste("Source= Other")) 
         }
         
@@ -554,6 +1074,7 @@ server <- function(input, output) {
   })
   
 #=====================================================================================================================================  
+  # PART 2 COMPARISON ************************************
   # Static initial leaflets, has observers for user inputs
   output$leftleaflet <- renderLeaflet({
     leaflet() %>%
@@ -573,6 +1094,305 @@ server <- function(input, output) {
                        color=~pal(types), stroke=FALSE, fillOpacity=0.5, label=paste("Source=", types)) %>%
       addLegend("bottomright", pal=pal, values=types, title="Energy Sources", opacity=1) %>%
       addControl(actionButton("zoomerRight", "Reset"), position="topright")
+  })
+  
+  # In observe, make sure to change the label using paste
+#=====================================================================================================================================  
+  # Left leaflet
+  observe({
+    
+    # If select input has selected 2000's, 2010's, or 2018's df 
+    if (input$yearLeft == 2000) {
+      dfToUse = df00
+    } else if (input$yearLeft == 2010) {
+      dfToUse = df10
+    } else { # if input$yearLeft == 2018
+      dfToUse = df18
+    }
+    
+    # From state input, get lat and lon from dfToUse
+    inp <- state.abb[which(state.name==input$stateLeft)]
+    dfToUse <- subset(dfToUse, STATE %in% inp)
+    
+    # Reset the map first to account for deselecting of checkboxes?
+    leafletProxy(mapId="leftleaflet", data=dfToUse) %>%
+      clearMarkers() 
+    
+    # Check if All (default) is checked MIGHT NOT NEED THIS ****
+    #alldf <- all18()
+    
+    # If nothing is checked, then just clear the markers
+    if (is.null(input$iconsLeft)) {
+      
+    } else {
+      # Get necessary data that was selected, Part I of event handling
+      
+      # Able to account for input$yearLeft and input$stateLeft in reactive values
+      coaldf <- coalL()
+      oildf <- oilL()
+      gasdf <- gasL()
+      nucleardf <- nuclearL()
+      hydrodf <- hydroL()
+      biomassdf <- biomassL()
+      winddf <- windL()
+      solardf <- solarL()
+      geothermaldf <- geothermalL()
+      otherdf <- otherL()
+      
+      # Try adding circle markers for each source one by one independently instead of aggregating
+      # add reactive values for each energy source so we can add circle markers one by one
+      # Part II of event handling
+      
+      if (!is.null(coaldf)) {
+        leafletProxy(mapId="leftleaflet", data=coaldf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=coaldf, (lng=coaldf$LON-0.001), (lat=coaldf$LAT+0.001), radius=7,
+                           color='black', stroke=FALSE, fillOpacity=1, label=paste("Source= Coal")) 
+      } 
+      
+      if (!is.null(oildf)) {
+        leafletProxy(mapId="leftleaflet", data=oildf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=oildf, lng=(oildf$LON+0.001), lat=oildf$LAT, radius=7,
+                           color='grey', stroke=FALSE, fillOpacity=1, label=paste("Source= Oil")) 
+      }
+      
+      if (!is.null(gasdf)) {
+        leafletProxy(mapId="leftleaflet", data=gasdf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=gasdf, lng=(gasdf$LON-0.001), lat=gasdf$LAT, radius=7,
+                           color='midnightblue', stroke=FALSE, fillOpacity=1, label=paste("Source= Gas")) 
+      }
+      
+      if (!is.null(nucleardf)) {
+        leafletProxy(mapId="leftleaflet", data=nucleardf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=nucleardf, lng=nucleardf$LON, (lat=nucleardf$LAT+0.001), radius=7,
+                           color='green', stroke=FALSE, fillOpacity=1, label=paste("Source= Nuclear")) 
+      }
+      
+      if (!is.null(hydrodf)) {
+        leafletProxy(mapId="leftleaflet", data=hydrodf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=hydrodf, lng=hydrodf$LON, (lat=hydrodf$LAT-0.001), radius=7,
+                           color='deepskyblue', stroke=FALSE, fillOpacity=1, label=paste("Source= Hydro")) 
+      }
+      
+      if (!is.null(biomassdf)) {
+        leafletProxy(mapId="leftleaflet", data=biomassdf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=biomassdf, lng=(biomassdf$LON+0.002), lat=biomassdf$LAT, radius=7,
+                           color='red', stroke=FALSE, fillOpacity=1, label=paste("Source= Biomass")) 
+      }
+      
+      if (!is.null(winddf)) {
+        leafletProxy(mapId="leftleaflet", data=winddf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=winddf, (lng=winddf$LON-0.002), lat=winddf$LAT, radius=7,
+                           color='lightblue', stroke=FALSE, fillOpacity=1, label=paste("Source= Wind")) 
+      }
+      
+      if (!is.null(solardf)) {
+        leafletProxy(mapId="leftleaflet", data=solardf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=solardf, lng=solardf$LON, (lat=solardf$LAT+0.002), radius=7,
+                           color='gold', stroke=FALSE, fillOpacity=1, label=paste("Source= Solar")) 
+      }
+      
+      if (!is.null(geothermaldf)) {
+        leafletProxy(mapId="leftleaflet", data=geothermaldf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=geothermaldf, lng=geothermaldf$LON, (lat=geothermaldf$LAT-0.002), radius=7,
+                           color='brown', stroke=FALSE, fillOpacity=1, label=paste("Source= Geothermal")) 
+      }
+      
+      if (!is.null(otherdf)) {
+        leafletProxy(mapId="leftleaflet", data=otherdf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=otherdf, (lng=otherdf$LON+0.001), (lat=otherdf$LAT+0.001), radius=7,
+                           color='burlywood', stroke=FALSE, fillOpacity=1, label=paste("Source= Other")) 
+      }
+      
+    }
+  })
+  
+#=====================================================================================================================================    
+  # Right leaflet
+  observe({
+    
+    # If select input has selected 2000's, 2010's, or 2018's df 
+    if (input$yearRight == 2000) {
+      dfToUse = df00
+    } else if (input$yearRight == 2010) {
+      dfToUse = df10
+    } else { # if input$yearLeft == 2018
+      dfToUse = df18
+    }
+    
+    # From state input, get lat and lon from dfToUse
+    inp <- state.abb[which(state.name==input$stateRight)]
+    dfToUse <- subset(dfToUse, STATE %in% inp)
+    
+    # Reset the map first to account for deselecting of checkboxes?
+    leafletProxy(mapId="rightleaflet", data=dfToUse) %>%
+      clearMarkers() 
+    
+    # Check if All (default) is checked MIGHT NOT NEED THIS ****
+    #alldf <- all18()
+    
+    
+    # if nothing is checked, then just clear the markers
+    if (is.null(input$iconsRight)) {
+      
+    } else {
+      # Get necessary data that was selected, Part I of event handling
+      
+      # Able to account for input$yearLeft and input$stateLeft in reactive values
+      coaldf <- coalR()
+      oildf <- oilR()
+      gasdf <- gasR()
+      nucleardf <- nuclearR()
+      hydrodf <- hydroR()
+      biomassdf <- biomassR()
+      winddf <- windR()
+      solardf <- solarR()
+      geothermaldf <- geothermalR()
+      otherdf <- otherR()
+      
+      # Try adding circle markers for each source one by one independently instead of aggregating
+      # add reactive values for each energy source so we can add circle markers one by one
+      # Part II of event handling
+      
+      if (!is.null(coaldf)) {
+        leafletProxy(mapId="rightleaflet", data=coaldf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=coaldf, lng=coaldf$LON, lat=coaldf$LAT, radius=7,
+                           color='black', stroke=FALSE, fillOpacity=1, label=paste("Source= Coal")) 
+      } 
+      
+      if (!is.null(oildf)) {
+        leafletProxy(mapId="rightleaflet", data=oildf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=oildf, lng=(oildf$LON+0.001), lat=oildf$LAT, radius=7,
+                           color='grey', stroke=FALSE, fillOpacity=1, label=paste("Source= Oil")) 
+      }
+      
+      if (!is.null(gasdf)) {
+        leafletProxy(mapId="rightleaflet", data=gasdf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=gasdf, lng=(gasdf$LON-0.001), lat=gasdf$LAT, radius=7,
+                           color='midnightblue', stroke=FALSE, fillOpacity=1, label=paste("Source= Gas")) 
+      }
+      
+      if (!is.null(nucleardf)) {
+        leafletProxy(mapId="rightleaflet", data=nucleardf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=nucleardf, lng=nucleardf$LON, (lat=nucleardf$LAT+0.001), radius=7,
+                           color='green', stroke=FALSE, fillOpacity=1, label=paste("Source= Nuclear")) 
+      }
+      
+      if (!is.null(hydrodf)) {
+        leafletProxy(mapId="rightleaflet", data=hydrodf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=hydrodf, lng=hydrodf$LON, (lat=hydrodf$LAT-0.001), radius=7,
+                           color='deepskyblue', stroke=FALSE, fillOpacity=1, label=paste("Source= Hydro")) 
+      }
+      
+      if (!is.null(biomassdf)) {
+        leafletProxy(mapId="rightleaflet", data=biomassdf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=biomassdf, lng=(biomassdf$LON+0.002), lat=biomassdf$LAT, radius=7,
+                           color='red', stroke=FALSE, fillOpacity=1, label=paste("Source= Biomass")) 
+      }
+      
+      if (!is.null(winddf)) {
+        leafletProxy(mapId="rightleaflet", data=winddf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=winddf, (lng=winddf$LON-0.002), lat=winddf$LAT, radius=7,
+                           color='lightblue', stroke=FALSE, fillOpacity=1, label=paste("Source= Wind")) 
+      }
+      
+      if (!is.null(solardf)) {
+        leafletProxy(mapId="rightleaflet", data=solardf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=solardf, lng=solardf$LON, (lat=solardf$LAT+0.002), radius=7,
+                           color='gold', stroke=FALSE, fillOpacity=1, label=paste("Source= Solar")) 
+      }
+      
+      if (!is.null(geothermaldf)) {
+        leafletProxy(mapId="rightleaflet", data=geothermaldf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=geothermaldf, lng=geothermaldf$LON, (lat=geothermaldf$LAT-0.002), radius=7,
+                           color='brown', stroke=FALSE, fillOpacity=1, label=paste("Source= Geothermal")) 
+      }
+      
+      if (!is.null(otherdf)) {
+        leafletProxy(mapId="rightleaflet", data=otherdf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=otherdf, (lng=otherdf$LON+0.001), (lat=otherdf$LAT+0.001), radius=7,
+                           color='burlywood', stroke=FALSE, fillOpacity=1, label=paste("Source= Other")) 
+      }
+      
+    }
+  })
+  
+  # Sets view based on state selected
+  observeEvent(input$stateLeft, {
+    # If select input has selected 2000's, 2010's, or 2018's df 
+    if (input$yearLeft == 2000) {
+      dfToUse = df00
+    } else if (input$yearLeft == 2010) {
+      dfToUse = df10
+    } else { # if input$yearLeft == 2018
+      dfToUse = df18
+    }
+    
+    # From state input, get lat and lon from dfToUse
+    inp <- state.abb[which(state.name==input$stateLeft)]
+    dfToUse <- subset(dfToUse, STATE %in% inp)
+    
+    state_data <- subset(statedf, State %in% inp)
+    
+    # Set view to look at selected State
+    leafletProxy(mapId="leftleaflet", data=dfToUse) %>%
+      clearMarkers() %>%
+      setView(lat=state_data$Latitude, lng=state_data$Longitude, zoom=6) %>% 
+      addCircleMarkers(data=dfToUse, lng=dfToUse$LON, lat=dfToUse$LAT, radius=7,
+                       color=~pal(types), stroke=FALSE, fillOpacity=0.5, label=paste("Source=", types))
+  })
+  
+  observeEvent(input$stateRight, {
+    # If select input has selected 2000's, 2010's, or 2018's df 
+    if (input$yearRight == 2000) {
+      dfToUse = df00
+    } else if (input$yearRight == 2010) {
+      dfToUse = df10
+    } else { # if input$yearLeft == 2018
+      dfToUse = df18
+    }
+    
+    # From state input, get lat and lon from dfToUse
+    inp <- state.abb[which(state.name==input$stateRight)]
+    dfToUse <- subset(dfToUse, STATE %in% inp)
+    
+    state_data <- subset(statedf, State %in% inp)
+    
+    # Set view to look at selected State
+    leafletProxy(mapId="rightleaflet", data=dfToUse) %>%
+      clearMarkers() %>% 
+      setView(lat=state_data$Latitude, lng=state_data$Longitude, zoom=6) %>% 
+      addCircleMarkers(data=dfToUse, lng=dfToUse$LON, lat=dfToUse$LAT, radius=7,
+                       color=~pal(types), stroke=FALSE, fillOpacity=0.5, label=paste("Source=", types))
+  })
+  
+  # Resets view to original position
+  observeEvent(input$zoomerLeft, {
+    leafletProxy("leftleaflet") %>% setView(lat=37.0902, -95.7129, zoom=9)
+  })
+  
+  observeEvent(input$zoomerRight, {
+    leafletProxy("rightleaflet") %>% setView(lat=37.0902, lng=-95.7129, zoom=9)
+  })
+  
+  observeEvent(input$leafletL, {
+    if (input$leafletL == "Leaflet 1") {
+      leafletProxy("leftleaflet") %>% clearMarkers() %>% addTiles()
+    } else if (input$leafletL == "Leaflet 2") {
+      leafletProxy("leftleaflet") %>% clearMarkers() %>% addProviderTiles(providers$Stamen.Terrain)
+    } else {
+      leafletProxy("leftleaflet") %>% clearMarkers() %>% addProviderTiles(providers$Esri.WorldImagery)
+    }
+    
+  })
+  
+  observeEvent(input$leafletR, {
+    if (input$leafletR == "Leaflet 1") {
+      leafletProxy("rightleaflet") %>% clearMarkers() %>% addTiles()
+    } else if (input$leafletR == "Leaflet 2") {
+      leafletProxy("rightleaflet") %>% clearMarkers() %>% addProviderTiles(providers$Stamen.Terrain)
+    } else {
+      leafletProxy("rightleaflet") %>% clearMarkers() %>% addProviderTiles(providers$Esri.WorldImagery)
+    } 
   })
 }
 
