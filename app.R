@@ -15,6 +15,7 @@ library(readxl)
 library(leaflet)
 library(ggplot2)
 library(geojsonio)
+library(maps)
 
 df18 <- read_excel("egrid2018_data_v2.xlsx", sheet="PLNT18")
 
@@ -163,6 +164,9 @@ df10$TOTAL_NR <- as.numeric(gsub(",", "", df10$TOTAL_NR))
 df10$OTHER <- df10$OTHER1 + df10$OTHER2
 df10 <- df10[ , !names(df10) %in% c("OTHER1", "OTHER2")]
 
+# Removes locations that don't have coordinates
+df10 <- subset(df10, !is.na(df10$LON))
+
 df10$STATE <- factor(df10$STATE)
 
 # need to compute
@@ -242,6 +246,12 @@ df00$TOTAL_NR <- as.numeric(gsub(",", "", df00$TOTAL_NR))
 df00$OTHER <- df00$OTHER1 + df00$OTHER2
 df00 <- df00[ , !names(df00) %in% c("OTHER1", "OTHER2")]
 
+# Removes locations that don't have coordinates
+df00 <- subset(df00, !is.na(df00$LON))
+
+# In 2000's dataset, longitude columns don't have '-', and since all these coordinates refer to US, add a '-'
+df00$LON <- -df00$LON
+
 df00$STATE <- factor(df00$STATE)
 
 # List of sources to display and select from in checklist
@@ -268,36 +278,65 @@ df00$PERCENT_NR <- round((df00$TOTAL_NR / df00$TOTAL), 3) * 100
 
 power_plants <- read_sf("PowerPlants_US_202004.shp")
 df18 %>% st_as_sf(coords = c("LON", "LAT"), crs=4326)
+df10 %>% st_as_sf(coords = c("LON", "LAT"), crs=4326)
+df00 %>% st_as_sf(coords = c("LON", "LAT"), crs=4326)
 
 df18IL <- subset(df18, df18$STATE == 'IL')
+df10IL <- subset(df10, df10$STATE == 'IL')
+df00IL <- subset(df00, df00$STATE == 'IL')
 
 #=====================================================================================================================================
 
 # Define UI for application that draws a histogram
 ui <- navbarPage("CS424 Spring 2021 Project 2",
-                 tabPanel("Illinois 2018 Data",
-                          
-                          # Checklist to filter sources
-                          fluidRow(
-                            #column(12,
-                            leafletOutput("test")
-                            #)
-                          ),
-                          fluidRow(
-                            column(3),
-                            column(6,
-                                   checkboxGroupInput("icons", "Select energy sources to display:",
-                                                      choiceNames = sources,
-                                                      choiceValues = sources,
-                                                      selected = 'All',
-                                                      inline=TRUE),
-                            ),
-                            column(3)
-                          )
-                 ),
-                 tabPanel("About"
-                          
-                 )
+         tabPanel("Illinois 2018 Data",
+                  fluidRow(
+                    leafletOutput("test")
+                  ),
+                  fluidRow(
+                    column(3),
+                    column(6,
+                           checkboxGroupInput("icons", "Select energy sources to display:",
+                                              choiceNames = sources,
+                                              choiceValues = sources,
+                                              selected = 'All',
+                                              inline=TRUE),
+                    ),
+                    column(3)
+                  )
+         ),
+         tabPanel("Compare 2 States Over 3 Different Years",
+                  fluidRow(
+                    column(6,
+                           leafletOutput("leftleaflet"),
+                    ),
+                    column(6,
+                           leafletOutput("rightleaflet"),
+                    )
+                  ),
+         ),
+         tabPanel("About",
+              h1("Project 2: Raw Power"),
+              h3("Developed By: Joshua Gonzales"),
+              h4("Project 2 in CS 424 (Data Analytics / Visualization) at the University of Illinois at Chicago Spring 2021"),
+              
+              h5("________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________"),
+
+              h3(""),
+              h4("This project contains data on the power plants from 2000, 2010, and 2018 for all 50 states of the US"),
+              h3(""),
+              h4("The data focuses on these power plants that generate these energy sources: "),
+              h4("Coal, Oil, Gas, Nuclear, Hydro, Biomass, Wind, Solar, Geothermal, and Other fuels"),
+              strong("The application helps visualize power plant data by using leaflets, with part 1 being just Illinois, part 2 being comparisons between two states, and part 3 involving displaying the whole US"),
+              h3(""),
+              
+              h5("* Libraries Used: shiny, tidyverse, sf, readxl, leaflet, ggplot2, geojsonio"),
+              
+              h5("* U.S. Environmental Protection Agency ->  https://www.epa.gov/egrid/download-data"),
+              h5("Files used: eGRID2000_plant.xls, eGRID2010_Data.xls, and egrid2018_data_v2.xlsx"),
+              
+              h5("* Created using R, RStudio, Shiny ")
+         )
                  
 )
 
@@ -312,22 +351,6 @@ server <- function(input, output) {
     }
     return (df)
   }) 
-  
-  #renew18 <- reactive({
-  #  df <- NULL
-  #  if ("Renewables" %in% input$icons) {
-  #    df <- subset(df18IL, df18IL$TOTAL_R > 0)
-  #  }
-  #  return (df)
-  #})
-  
-  #nonrenew18 <- reactive({
-  #  df <- NULL
-  #  if ("Non-renewables" %in% input$icons) {
-  #    df <- subset(df18IL, df18IL$TOTAL_NR > 0)
-  #  }
-  #  return (df)
-  #})
   
   # Get reactive data from selected items in checklist based on category and source
   coal18 <- reactive({
@@ -410,9 +433,13 @@ server <- function(input, output) {
     }
     return (otherdf)
   })
-  
+
 #=====================================================================================================================================
+  # For part 2 with States and Years  
   
+
+#=====================================================================================================================================
+  # Display Output
   types <- c("Coal", "Oil", "Gas", "Nuclear", "Hydro", "Biomass", "Wind", "Solar",
              "Geothermal", "Other")
   
@@ -526,6 +553,27 @@ server <- function(input, output) {
     leafletProxy("test") %>% setView(lat=39.8331, lng=-88.8985, zoom=6)
   })
   
+#=====================================================================================================================================  
+  # Static initial leaflets, has observers for user inputs
+  output$leftleaflet <- renderLeaflet({
+    leaflet() %>%
+      addTiles() %>%
+      setView(lat=39.8331, lng=-88.8985, zoom=6) %>%
+      addCircleMarkers(data=df00IL, lng=df00IL$LON, lat=df00IL$LAT, radius=7,
+                       color=~pal(types), stroke=FALSE, fillOpacity=0.5, label=paste("Source=", types)) %>%
+      addLegend("bottomright", pal=pal, values=types, title="Energy Sources", opacity=1) %>%
+      addControl(actionButton("zoomerLeft", "Reset"), position="topright")
+  })
+  
+  output$rightleaflet <- renderLeaflet({
+    leaflet() %>%
+      addTiles() %>%
+      setView(lat=39.8331, lng=-88.8985, zoom=6) %>%
+      addCircleMarkers(data=df18IL, lng=df18IL$LON, lat=df18IL$LAT, radius=7,
+                       color=~pal(types), stroke=FALSE, fillOpacity=0.5, label=paste("Source=", types)) %>%
+      addLegend("bottomright", pal=pal, values=types, title="Energy Sources", opacity=1) %>%
+      addControl(actionButton("zoomerRight", "Reset"), position="topright")
+  })
 }
 
 # Run the application 
