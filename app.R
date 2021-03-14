@@ -84,7 +84,7 @@ df18$STATE <- factor(df18$STATE)
 
 # need to compute
 # 1.) Total generation
-df18$TOTAL <- df18$COAL + df18$OIL + df18$GAS + df18$NUCLEAR + df18$HYDRO + df18$BIOMASS + df18$WIND + df18$WIND + df18$SOLAR + df18$OTHER
+df18$TOTAL <- df18$COAL + df18$OIL + df18$GAS + df18$NUCLEAR + df18$HYDRO + df18$BIOMASS + df18$WIND + df18$SOLAR + df18$OTHER
 
 # 2.) % of total for each of 10 types -> reactive
 # 3.) total renewable (HYDRO, BIOMASS, WIND, SOLAR, GEOTHERMAL) 
@@ -101,6 +101,8 @@ df18$PERCENT_R <- round((df18$TOTAL_R / df18$TOTAL), 3) * 100
 df18$PERCENT_NR <- round((df18$TOTAL_NR / df18$TOTAL), 3) * 100
 # df18$PERCENT_NR <- ifelse(!d18$TOTAL, 0, round((df18$TOTAL_NR / df18$TOTAL), 3) * 100)
 
+mins18 <- c(min(df18$COAL), min(df18$OIL), min(df18$GAS), min(df18$NUCLEAR), min(df18$HYDRO), min(df18$BIOMASS), min(df18$WIND), min(df18$SOLAR), min(df18$OTHER))
+maxs18 <- c(max(df18$COAL), max(df18$OIL), max(df18$GAS), max(df18$NUCLEAR), max(df18$HYDRO), max(df18$BIOMASS), max(df18$WIND), max(df18$SOLAR), max(df18$OTHER))
 #=====================================================================================================================================
 df10 <- read_excel("eGRID2010_Data.xls", sheet = "PLNT10")
 
@@ -172,7 +174,7 @@ df10$STATE <- factor(df10$STATE)
 
 # need to compute
 # 1.) Total generation
-df10$TOTAL <- df10$COAL + df10$OIL + df10$GAS + df10$NUCLEAR + df10$HYDRO + df10$BIOMASS + df10$WIND + df10$WIND + df10$SOLAR + df10$OTHER
+df10$TOTAL <- df10$COAL + df10$OIL + df10$GAS + df10$NUCLEAR + df10$HYDRO + df10$BIOMASS + df10$WIND + df10$SOLAR + df10$OTHER
 
 # 2.) % of total for each of 10 types -> reactive
 # 3.) total renewable (HYDRO, BIOMASS, WIND, SOLAR, GEOTHERMAL) -> Already in df
@@ -185,6 +187,9 @@ df10$PERCENT_R <- round((df10$TOTAL_R / df10$TOTAL), 3) * 100
 # 6.) % of total that is non-renewable
 df10$PERCENT_NR <- round((df10$TOTAL_NR / df10$TOTAL), 3) * 100
 # df18$PERCENT_NR <- ifelse(!d18$TOTAL, 0, round((df18$TOTAL_NR / df18$TOTAL), 3) * 100)
+
+mins10 <- c(min(df10$COAL), min(df10$OIL), min(df10$GAS), min(df10$NUCLEAR), min(df10$HYDRO), min(df10$BIOMASS), min(df10$WIND), min(df10$SOLAR), min(df10$OTHER))
+maxs10 <- c(max(df10$COAL), max(df10$OIL), max(df10$GAS), max(df10$NUCLEAR), max(df10$HYDRO), max(df10$BIOMASS), max(df10$WIND), max(df10$SOLAR), max(df10$OTHER))
 
 #=====================================================================================================================================
 df00 <- read_excel("eGRID2000_plant.xls", sheet = "EGRDPLNT00")
@@ -261,7 +266,7 @@ sources <- c("Coal", "Oil", "Gas", "Nuclear", "Hydro", "Biomass", "Wind", "Solar
 
 # need to compute
 # 1.) Total generation
-df00$TOTAL <- df00$COAL + df00$OIL + df00$GAS + df00$NUCLEAR + df00$HYDRO + df00$BIOMASS + df00$WIND + df00$WIND + df00$SOLAR + df00$OTHER
+df00$TOTAL <- df00$COAL + df00$OIL + df00$GAS + df00$NUCLEAR + df00$HYDRO + df00$BIOMASS + df00$WIND + df00$SOLAR + df00$OTHER
 
 # 2.) % of total for each of 10 types -> reactive
 # 3.) total renewable (HYDRO, BIOMASS, WIND, SOLAR, GEOTHERMAL) -> Already in df
@@ -274,6 +279,9 @@ df00$PERCENT_R <- round((df00$TOTAL_R / df00$TOTAL), 3) * 100
 # 6.) % of total that is non-renewable
 df00$PERCENT_NR <- round((df00$TOTAL_NR / df00$TOTAL), 3) * 100
 # df10$PERCENT_NR <- ifelse(!d10$TOTAL, 0, round((df10$TOTAL_NR / df10$TOTAL), 3) * 100)
+
+mins00 <- c(min(df00$COAL), min(df00$OIL), min(df00$GAS), min(df00$NUCLEAR), min(df00$HYDRO), min(df00$BIOMASS), min(df00$WIND), min(df00$SOLAR), min(df00$OTHER))
+maxs00 <- c(max(df00$COAL), max(df00$OIL), max(df00$GAS), max(df00$NUCLEAR), max(df00$HYDRO), max(df00$BIOMASS), max(df00$WIND), max(df00$SOLAR), max(df00$OTHER))
 
 #=====================================================================================================================================
 
@@ -401,6 +409,7 @@ server <- function(input, output) {
     if ("All" %in% input$icons) {
       df <- df18IL
     }
+    df <- subset(df, is.na(df$COAL)) # df with data that don't have data about generation
     return (df)
   }) 
   
@@ -492,7 +501,10 @@ server <- function(input, output) {
   # LEFT SIDE
   allL <- reactive({
     df <- NULL
+    
     if ("All" %in% input$iconsLeft) {
+      # Accounts for state input
+      inp <- state.abb[which(state.name==input$stateLeft)]
       if (input$yearLeft == 2000) {
         df <- subset(df00, (STATE %in% inp))
       } else if (input$yearLeft == 2010) {
@@ -500,8 +512,9 @@ server <- function(input, output) {
       } else {
         df <- subset(df18, (STATE %in% inp))
       }
-      
+      df <- subset(df, is.null(df$COAL)) # Displays plants that don't have any info about their data
     }
+    
     return (df)
   }) 
   
@@ -728,6 +741,9 @@ server <- function(input, output) {
   # RIGHT SIDE  
   allR <- reactive({
     df <- NULL
+    # Accounts for state input
+    inp <- state.abb[which(state.name==input$stateRight)]
+    
     if ("All" %in% input$iconsRight) {
       if (input$yearRight == 2000) {
         df <- subset(df00, (STATE %in% inp))
@@ -736,7 +752,9 @@ server <- function(input, output) {
       } else {
         df <- subset(df18, (STATE %in% inp))
       }
+      df <- subset(df, is.null(df$COAL)) # Displays plants that don't have any info about their data
     }
+    
     return (df)
   }) 
   
@@ -959,10 +977,10 @@ server <- function(input, output) {
   })
 #=====================================================================================================================================
   # Display Output
-  types <- c("Coal", "Oil", "Gas", "Nuclear", "Hydro", "Biomass", "Wind", "Solar",
+  types <- c("None", "Coal", "Oil", "Gas", "Nuclear", "Hydro", "Biomass", "Wind", "Solar",
              "Geothermal", "Other")
   
-  pal <- colorFactor(palette = c("black", "grey40", "midnightblue", "chartreuse4", "deepskyblue", "red2", "lightblue",
+  pal <- colorFactor(palette = c("thistle1", "black", "grey40", "midnightblue", "chartreuse4", "deepskyblue", "red2", "lightblue",
                                  "gold", "brown", "burlywood"), 
                      levels = types)
   
@@ -973,7 +991,7 @@ server <- function(input, output) {
       addTiles() %>%
       setView(lat=39.8331, lng=-88.8985, zoom=6) %>%
       addLegend("bottomright", pal=pal, values=types, title="Energy Sources", opacity=1) %>%
-      addControl(actionButton("zoomer", "Reset"), position="topright")
+      addControl(actionButton("zoomer", "Reset"), position="bottomleft")
   })
   
   observe({
@@ -982,15 +1000,12 @@ server <- function(input, output) {
     leafletProxy(mapId="test", data=df18IL) %>%
       clearMarkers()
     
-    # check if All (default) is checked MIGHT NOT NEED THIS ****
-    alldf <- all18()
-    
-    
     # if nothing is checked, then just clear the markers
     if (is.null(input$icons)) {
         
     } else {
         # Get necessary data that was selected, Part I of event handling
+        alldf <- all18()      
         coaldf <- coal18()
         oildf <- oil18()
         gasdf <- gas18()
@@ -1005,6 +1020,11 @@ server <- function(input, output) {
         # Try adding circle markers for each source one by one independently instead of aggregating
         # add reactive values for each energy source so we can add circle markers one by one
         # Part II of event handling
+        if (!is.null(alldf)) {
+          leafletProxy(mapId="test", data=alldf) %>% # clearMarkers() %>%
+            addCircleMarkers(data=alldf, lng=alldf$LON, lat=alldf$LAT, radius=7,
+                             color='thistle1', stroke=FALSE, fillOpacity=1, label=paste("Source= None")) 
+        }
       
         if (!is.null(coaldf)) {
           leafletProxy(mapId="test", data=coaldf) %>% # clearMarkers() %>%
@@ -1081,9 +1101,10 @@ server <- function(input, output) {
       addTiles() %>%
       setView(lat=39.8331, lng=-88.8985, zoom=6) %>%
       addCircleMarkers(data=df00IL, lng=df00IL$LON, lat=df00IL$LAT, radius=7,
-                       color=~pal(types), stroke=FALSE, fillOpacity=0.5, label=paste("Source=", types)) %>%
-      addLegend("bottomright", pal=pal, values=types, title="Energy Sources", opacity=1) %>%
-      addControl(actionButton("zoomerLeft", "Reset"), position="topright")
+                       color=~pal(types), stroke=FALSE, fillOpacity=1, label=paste("Source=", types)) %>%
+      addLegendCustom(colors = c("black", "black", "black"), labels = c("Generation > A", "Generation > B", "Generation > C"), sizes = c(7, 9, 12)) %>%
+      addLegend("bottomright", pal=pal, values=types, title="Energy Sources", opacity=1) %>% 
+      addControl(actionButton("zoomerLeft", "Reset"), position="bottomleft")
   })
   
   output$rightleaflet <- renderLeaflet({
@@ -1091,9 +1112,10 @@ server <- function(input, output) {
       addTiles() %>%
       setView(lat=39.8331, lng=-88.8985, zoom=6) %>%
       addCircleMarkers(data=df18IL, lng=df18IL$LON, lat=df18IL$LAT, radius=7,
-                       color=~pal(types), stroke=FALSE, fillOpacity=0.5, label=paste("Source=", types)) %>%
+                       color=~pal(types), stroke=FALSE, fillOpacity=1, label=paste("Source=", types)) %>%
+      addLegendCustom(colors = c("black", "black", "black"), labels = c("Generation > A", "Generation > B", "Generation > C"), sizes = c(7, 9, 12)) %>%
       addLegend("bottomright", pal=pal, values=types, title="Energy Sources", opacity=1) %>%
-      addControl(actionButton("zoomerRight", "Reset"), position="topright")
+      addControl(actionButton("zoomerRight", "Reset"), position="bottomleft")
   })
   
   # In observe, make sure to change the label using paste
@@ -1116,10 +1138,7 @@ server <- function(input, output) {
     
     # Reset the map first to account for deselecting of checkboxes?
     leafletProxy(mapId="leftleaflet", data=dfToUse) %>%
-      clearMarkers() 
-    
-    # Check if All (default) is checked MIGHT NOT NEED THIS ****
-    #alldf <- all18()
+      clearMarkers()
     
     # If nothing is checked, then just clear the markers
     if (is.null(input$iconsLeft)) {
@@ -1128,6 +1147,7 @@ server <- function(input, output) {
       # Get necessary data that was selected, Part I of event handling
       
       # Able to account for input$yearLeft and input$stateLeft in reactive values
+      alldf <- allL()
       coaldf <- coalL()
       oildf <- oilL()
       gasdf <- gasL()
@@ -1139,68 +1159,109 @@ server <- function(input, output) {
       geothermaldf <- geothermalL()
       otherdf <- otherL()
       
+      sourceList <- c()
+      
       # Try adding circle markers for each source one by one independently instead of aggregating
       # add reactive values for each energy source so we can add circle markers one by one
       # Part II of event handling
       
+      # Check if All (default) is checked
+      if (!is.null(alldf)) {
+        leafletProxy(mapId="leftleaflet", data=alldf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=alldf, (lng=alldf$LON+0.001), (lat=alldf$LAT-0.001), radius=7,
+                           color='thistle1', stroke=FALSE, fillOpacity=1, 
+                           label=paste("Source= None || Plant Name: ", alldf$NAME, "Generation Capacity= None ", 
+                                       " || Renewable= NA", alldf$PERCENT_R, " || Non-renewable= NA", alldf$PERCENT_NR)) 
+      }
+      
       if (!is.null(coaldf)) {
+        sourceList <- append(sourceList, "Coal")
         leafletProxy(mapId="leftleaflet", data=coaldf) %>% # clearMarkers() %>%
-          addCircleMarkers(data=coaldf, (lng=coaldf$LON-0.001), (lat=coaldf$LAT+0.001), radius=7,
-                           color='black', stroke=FALSE, fillOpacity=1, label=paste("Source= Coal")) 
+          addCircleMarkers(data=coaldf, lng=coaldf$LON, lat=coaldf$LAT, radius=7,
+                           color='black', stroke=FALSE, fillOpacity=1, 
+                           label=paste("Source= Coal || Plant Name: ", coaldf$NAME, "Generation Capacity= ",  sourceList,
+                                       " || Renewable= ", coaldf$PERCENT_R, "% || Non-renewable= ", coaldf$PERCENT_NR, "%")) 
       } 
       
       if (!is.null(oildf)) {
+        sourceList <- append(sourceList, "Oil")
         leafletProxy(mapId="leftleaflet", data=oildf) %>% # clearMarkers() %>%
           addCircleMarkers(data=oildf, lng=(oildf$LON+0.001), lat=oildf$LAT, radius=7,
-                           color='grey', stroke=FALSE, fillOpacity=1, label=paste("Source= Oil")) 
+                           color='grey', stroke=FALSE, fillOpacity=1, 
+                           label=paste("Source= Oil || Plant Name: ", oildf$NAME, "Generation Capacity= ",  sourceList,
+                                       " || Renewable= ", oildf$PERCENT_R, "% || Non-renewable= ", oildf$PERCENT_NR, "%"))
       }
       
       if (!is.null(gasdf)) {
+        sourceList <- append(sourceList, "Gas")
         leafletProxy(mapId="leftleaflet", data=gasdf) %>% # clearMarkers() %>%
           addCircleMarkers(data=gasdf, lng=(gasdf$LON-0.001), lat=gasdf$LAT, radius=7,
-                           color='midnightblue', stroke=FALSE, fillOpacity=1, label=paste("Source= Gas")) 
+                           color='midnightblue', stroke=FALSE, fillOpacity=1, 
+                           label=paste("Source= Gas || Plant Name: ", gasdf$NAME, "Generation Capacity= ",  sourceList,
+                                       " || Renewable= ", gasdf$PERCENT_R, "% || Non-renewable= ", gasdf$PERCENT_NR, "%"))
       }
       
       if (!is.null(nucleardf)) {
+        sourceList <- append(sourceList, "Nuclear")
         leafletProxy(mapId="leftleaflet", data=nucleardf) %>% # clearMarkers() %>%
           addCircleMarkers(data=nucleardf, lng=nucleardf$LON, (lat=nucleardf$LAT+0.001), radius=7,
-                           color='green', stroke=FALSE, fillOpacity=1, label=paste("Source= Nuclear")) 
+                           color='green', stroke=FALSE, fillOpacity=1, 
+                           label=paste("Source= Nuclear || Plant Name: ", nucleardf$NAME, "Generation Capacity= ",  sourceList,
+                                       " || Renewable= ", nucleardf$PERCENT_R, "% || Non-renewable= ", nucleardf$PERCENT_NR, "%")) 
       }
       
       if (!is.null(hydrodf)) {
+        sourceList <- append(sourceList, "Hydro")
         leafletProxy(mapId="leftleaflet", data=hydrodf) %>% # clearMarkers() %>%
           addCircleMarkers(data=hydrodf, lng=hydrodf$LON, (lat=hydrodf$LAT-0.001), radius=7,
-                           color='deepskyblue', stroke=FALSE, fillOpacity=1, label=paste("Source= Hydro")) 
+                           color='deepskyblue', stroke=FALSE, fillOpacity=1, 
+                           label=paste("Source= Hydro || Plant Name: ", hydrodf$NAME, "Generation Capacity= ",  sourceList,
+                                       " || Renewable= ", hydrodf$PERCENT_R, "% || Non-renewable= ", hydrodf$PERCENT_NR, "%"))
       }
       
       if (!is.null(biomassdf)) {
+        sourceList <- append(sourceList, "Biomass")
         leafletProxy(mapId="leftleaflet", data=biomassdf) %>% # clearMarkers() %>%
           addCircleMarkers(data=biomassdf, lng=(biomassdf$LON+0.002), lat=biomassdf$LAT, radius=7,
-                           color='red', stroke=FALSE, fillOpacity=1, label=paste("Source= Biomass")) 
+                           color='red', stroke=FALSE, fillOpacity=1, 
+                           label=paste("Source= Biomass || Plant Name: ", biomassdf$NAME, "Generation Capacity= ",  sourceList,
+                                       " || Renewable= ", biomassdf$PERCENT_R, "% || Non-renewable= ", biomassdf$PERCENT_NR, "%"))
       }
       
       if (!is.null(winddf)) {
+        sourceList <- append(sourceList, "Wind")
         leafletProxy(mapId="leftleaflet", data=winddf) %>% # clearMarkers() %>%
           addCircleMarkers(data=winddf, (lng=winddf$LON-0.002), lat=winddf$LAT, radius=7,
-                           color='lightblue', stroke=FALSE, fillOpacity=1, label=paste("Source= Wind")) 
+                           color='lightblue', stroke=FALSE, fillOpacity=1, 
+                           label=paste("Source= Wind || Plant Name: ", winddf$NAME, "Generation Capacity= ",  sourceList,
+                                       " || Renewable= ", winddf$PERCENT_R, "% || Non-renewable= ", winddf$PERCENT_NR, "%"))
       }
       
       if (!is.null(solardf)) {
+        sourceList <- append(sourceList, "Solar")
         leafletProxy(mapId="leftleaflet", data=solardf) %>% # clearMarkers() %>%
           addCircleMarkers(data=solardf, lng=solardf$LON, (lat=solardf$LAT+0.002), radius=7,
-                           color='gold', stroke=FALSE, fillOpacity=1, label=paste("Source= Solar")) 
+                           color='gold', stroke=FALSE, fillOpacity=1, 
+                           label=paste("Source= Solar || Plant Name: ", solardf$NAME, "Generation Capacity= ",  sourceList,
+                                       " || Renewable= ", solardf$PERCENT_R, "% || Non-renewable= ", solardf$PERCENT_NR, "%"))
       }
       
       if (!is.null(geothermaldf)) {
+        sourceList <- append(sourceList, "Geothermal")
         leafletProxy(mapId="leftleaflet", data=geothermaldf) %>% # clearMarkers() %>%
           addCircleMarkers(data=geothermaldf, lng=geothermaldf$LON, (lat=geothermaldf$LAT-0.002), radius=7,
-                           color='brown', stroke=FALSE, fillOpacity=1, label=paste("Source= Geothermal")) 
+                           color='brown', stroke=FALSE, fillOpacity=1, 
+                           label=paste("Source= Geothermal || Plant Name: ", geothermaldf$NAME, "Generation Capacity= ",  sourceList,
+                                       " || Renewable= ", geothermaldf$PERCENT_R, "% || Non-renewable= ", geothermaldf$PERCENT_NR, "%"))
       }
       
       if (!is.null(otherdf)) {
+        sourceList <- append(sourceList, "Other")
         leafletProxy(mapId="leftleaflet", data=otherdf) %>% # clearMarkers() %>%
           addCircleMarkers(data=otherdf, (lng=otherdf$LON+0.001), (lat=otherdf$LAT+0.001), radius=7,
-                           color='burlywood', stroke=FALSE, fillOpacity=1, label=paste("Source= Other")) 
+                           color='burlywood', stroke=FALSE, fillOpacity=1, 
+                           label=paste("Source= Other || Plant Name: ", otherdf$NAME, "Generation Capacity= ",  sourceList,
+                                       " || Renewable= ", otherdf$PERCENT_R, "% || Non-renewable= ", otherdf$PERCENT_NR, "%"))
       }
       
     }
@@ -1227,10 +1288,6 @@ server <- function(input, output) {
     leafletProxy(mapId="rightleaflet", data=dfToUse) %>%
       clearMarkers() 
     
-    # Check if All (default) is checked MIGHT NOT NEED THIS ****
-    #alldf <- all18()
-    
-    
     # if nothing is checked, then just clear the markers
     if (is.null(input$iconsRight)) {
       
@@ -1238,6 +1295,7 @@ server <- function(input, output) {
       # Get necessary data that was selected, Part I of event handling
       
       # Able to account for input$yearLeft and input$stateLeft in reactive values
+      alldf <- allR()
       coaldf <- coalR()
       oildf <- oilR()
       gasdf <- gasR()
@@ -1249,73 +1307,113 @@ server <- function(input, output) {
       geothermaldf <- geothermalR()
       otherdf <- otherR()
       
+      sourceList <- c()
+      
       # Try adding circle markers for each source one by one independently instead of aggregating
       # add reactive values for each energy source so we can add circle markers one by one
       # Part II of event handling
-      
+      if (!is.null(alldf)) {
+        leafletProxy(mapId="rightleaflet", data=alldf) %>% # clearMarkers() %>%
+          addCircleMarkers(data=alldf, (lng=alldf$LON+0.001), (lat=alldf$LAT-0.001), radius=7,
+                           color='thistle1', stroke=FALSE, fillOpacity=1, 
+                           label=paste("Source= None || ", alldf$NAME, "Generation Capacity= None", 
+                                       " || Renewable= NA", alldf$PERCENT_R, " || Non-renewable= NA", alldf$PERCENT_NR)) 
+      }
+
       if (!is.null(coaldf)) {
+        sourceList <- append(sourceList, "Coal")
         leafletProxy(mapId="rightleaflet", data=coaldf) %>% # clearMarkers() %>%
           addCircleMarkers(data=coaldf, lng=coaldf$LON, lat=coaldf$LAT, radius=7,
-                           color='black', stroke=FALSE, fillOpacity=1, label=paste("Source= Coal")) 
+                           color='black', stroke=FALSE, fillOpacity=1, 
+                           label=paste("Source= Coal || ", coaldf$NAME, "Generation Capacity= ",  sourceList,
+                                       " || Renewable= ", coaldf$PERCENT_R, "% || Non-renewable= ", coaldf$PERCENT_NR, "%")) 
       } 
       
       if (!is.null(oildf)) {
+        sourceList <- append(sourceList, "Oil")
         leafletProxy(mapId="rightleaflet", data=oildf) %>% # clearMarkers() %>%
           addCircleMarkers(data=oildf, lng=(oildf$LON+0.001), lat=oildf$LAT, radius=7,
-                           color='grey', stroke=FALSE, fillOpacity=1, label=paste("Source= Oil")) 
+                           color='grey', stroke=FALSE, fillOpacity=1, 
+                           label=paste("Source= Oil || ", oildf$NAME, "Generation Capacity= ",  sourceList,
+                                       " || Renewable= ", oildf$PERCENT_R, "% || Non-renewable= ", oildf$PERCENT_NR, "%"))
       }
       
       if (!is.null(gasdf)) {
+        sourceList <- append(sourceList, "Gas")
         leafletProxy(mapId="rightleaflet", data=gasdf) %>% # clearMarkers() %>%
           addCircleMarkers(data=gasdf, lng=(gasdf$LON-0.001), lat=gasdf$LAT, radius=7,
-                           color='midnightblue', stroke=FALSE, fillOpacity=1, label=paste("Source= Gas")) 
+                           color='midnightblue', stroke=FALSE, fillOpacity=1, 
+                           label=paste("Source= Gas || ", gasdf$NAME, "Generation Capacity= ",  sourceList,
+                                       " || Renewable= ", gasdf$PERCENT_R, "% || Non-renewable= ", gasdf$PERCENT_NR, "%"))
       }
       
       if (!is.null(nucleardf)) {
+        sourceList <- append(sourceList, "Nuclear")
         leafletProxy(mapId="rightleaflet", data=nucleardf) %>% # clearMarkers() %>%
           addCircleMarkers(data=nucleardf, lng=nucleardf$LON, (lat=nucleardf$LAT+0.001), radius=7,
-                           color='green', stroke=FALSE, fillOpacity=1, label=paste("Source= Nuclear")) 
+                           color='green', stroke=FALSE, fillOpacity=1, 
+                           label=paste("Source= Nuclear || ", nucleardf$NAME, "Generation Capacity= ",  sourceList,
+                                       " || Renewable= ", nucleardf$PERCENT_R, "% || Non-renewable= ", nucleardf$PERCENT_NR, "%")) 
       }
       
       if (!is.null(hydrodf)) {
+        sourceList <- append(sourceList, "Hydro")
         leafletProxy(mapId="rightleaflet", data=hydrodf) %>% # clearMarkers() %>%
           addCircleMarkers(data=hydrodf, lng=hydrodf$LON, (lat=hydrodf$LAT-0.001), radius=7,
-                           color='deepskyblue', stroke=FALSE, fillOpacity=1, label=paste("Source= Hydro")) 
+                           color='deepskyblue', stroke=FALSE, fillOpacity=1, 
+                           label=paste("Source= Hydro || ", hydrodf$NAME, "Generation Capacity= ",  sourceList,
+                                       " || Renewable= ", hydrodf$PERCENT_R, "% || Non-renewable= ", hydrodf$PERCENT_NR, "%"))
       }
       
       if (!is.null(biomassdf)) {
+        sourceList <- append(sourceList, "Biomass")
         leafletProxy(mapId="rightleaflet", data=biomassdf) %>% # clearMarkers() %>%
           addCircleMarkers(data=biomassdf, lng=(biomassdf$LON+0.002), lat=biomassdf$LAT, radius=7,
-                           color='red', stroke=FALSE, fillOpacity=1, label=paste("Source= Biomass")) 
+                           color='red', stroke=FALSE, fillOpacity=1, 
+                           label=paste("Source= Biomass || ", biomassdf$NAME, "Generation Capacity= ",  sourceList,
+                                       " || Renewable= ", biomassdf$PERCENT_R, "% || Non-renewable= ", biomassdf$PERCENT_NR, "%"))
       }
       
       if (!is.null(winddf)) {
+        sourceList <- append(sourceList, "Wind")
         leafletProxy(mapId="rightleaflet", data=winddf) %>% # clearMarkers() %>%
           addCircleMarkers(data=winddf, (lng=winddf$LON-0.002), lat=winddf$LAT, radius=7,
-                           color='lightblue', stroke=FALSE, fillOpacity=1, label=paste("Source= Wind")) 
+                           color='lightblue', stroke=FALSE, fillOpacity=1, 
+                           label=paste("Source= Wind || ", winddf$NAME, "Generation Capacity= ",  sourceList,
+                                       " || Renewable= ", winddf$PERCENT_R, "% || Non-renewable= ", winddf$PERCENT_NR, "%"))
       }
       
       if (!is.null(solardf)) {
+        sourceList <- append(sourceList, "Solar")
         leafletProxy(mapId="rightleaflet", data=solardf) %>% # clearMarkers() %>%
           addCircleMarkers(data=solardf, lng=solardf$LON, (lat=solardf$LAT+0.002), radius=7,
-                           color='gold', stroke=FALSE, fillOpacity=1, label=paste("Source= Solar")) 
+                           color='gold', stroke=FALSE, fillOpacity=1, 
+                           label=paste("Source= Solar || ", solardf$NAME, "Generation Capacity= ",  sourceList,
+                                       " || Renewable= ", solardf$PERCENT_R, "% || Non-renewable= ", solardf$PERCENT_NR, "%"))
       }
       
       if (!is.null(geothermaldf)) {
+        sourceList <- append(sourceList, "Geothermal")
         leafletProxy(mapId="rightleaflet", data=geothermaldf) %>% # clearMarkers() %>%
           addCircleMarkers(data=geothermaldf, lng=geothermaldf$LON, (lat=geothermaldf$LAT-0.002), radius=7,
-                           color='brown', stroke=FALSE, fillOpacity=1, label=paste("Source= Geothermal")) 
+                           color='brown', stroke=FALSE, fillOpacity=1, 
+                           label=paste("Source= Geothermal || ", geothermaldf$NAME, "Generation Capacity= ",  sourceList,
+                                       " || Renewable= ", geothermaldf$PERCENT_R, "% || Non-renewable= ", geothermaldf$PERCENT_NR, "%"))
       }
       
       if (!is.null(otherdf)) {
+        sourceList <- append(sourceList, "Other")
         leafletProxy(mapId="rightleaflet", data=otherdf) %>% # clearMarkers() %>%
           addCircleMarkers(data=otherdf, (lng=otherdf$LON+0.001), (lat=otherdf$LAT+0.001), radius=7,
-                           color='burlywood', stroke=FALSE, fillOpacity=1, label=paste("Source= Other")) 
+                           color='burlywood', stroke=FALSE, fillOpacity=1, 
+                           label=paste("Source= Other || ", otherdf$NAME, "Generation Capacity= ",  sourceList,
+                                       " || Renewable= ", otherdf$PERCENT_R, "% || Non-renewable= ", otherdf$PERCENT_NR, "%"))
       }
       
     }
   })
   
+#=====================================================================================================================================    
   # Sets view based on state selected
   observeEvent(input$stateLeft, {
     # If select input has selected 2000's, 2010's, or 2018's df 
@@ -1338,7 +1436,7 @@ server <- function(input, output) {
       clearMarkers() %>%
       setView(lat=state_data$Latitude, lng=state_data$Longitude, zoom=6) %>% 
       addCircleMarkers(data=dfToUse, lng=dfToUse$LON, lat=dfToUse$LAT, radius=7,
-                       color=~pal(types), stroke=FALSE, fillOpacity=0.5, label=paste("Source=", types))
+                       color=~pal(types), stroke=FALSE, fillOpacity=1, label=paste("Source=", types))
   })
   
   observeEvent(input$stateRight, {
@@ -1362,16 +1460,16 @@ server <- function(input, output) {
       clearMarkers() %>% 
       setView(lat=state_data$Latitude, lng=state_data$Longitude, zoom=6) %>% 
       addCircleMarkers(data=dfToUse, lng=dfToUse$LON, lat=dfToUse$LAT, radius=7,
-                       color=~pal(types), stroke=FALSE, fillOpacity=0.5, label=paste("Source=", types))
+                       color=~pal(types), stroke=FALSE, fillOpacity=1, label=paste("Source=", types))
   })
   
   # Resets view to original position
   observeEvent(input$zoomerLeft, {
-    leafletProxy("leftleaflet") %>% setView(lat=37.0902, -95.7129, zoom=9)
+    leafletProxy("leftleaflet") %>% setView(lat=37.0902, -95.7129, zoom=2)
   })
   
   observeEvent(input$zoomerRight, {
-    leafletProxy("rightleaflet") %>% setView(lat=37.0902, lng=-95.7129, zoom=9)
+    leafletProxy("rightleaflet") %>% setView(lat=37.0902, lng=-95.7129, zoom=2)
   })
   
   observeEvent(input$leafletL, {
@@ -1394,6 +1492,22 @@ server <- function(input, output) {
       leafletProxy("rightleaflet") %>% clearMarkers() %>% addProviderTiles(providers$Esri.WorldImagery)
     } 
   })
+  
+  addLegendCustom <- function(map, colors, labels, sizes, opacity = 1){
+    colorAdditions <- paste0(colors, "; width:", sizes, "px; height:", sizes, "px")
+    labelAdditions <- paste0("<div style='display: inline-block;height: ", sizes, "px;margin-top: 4px;line-height: ", sizes, "px;'>", labels, "</div>")
+    
+    return(addLegend(map, colors = colorAdditions, labels = labelAdditions, opacity = opacity))
+  }
+  
+  # Gets list of sources that have generation > 0 
+  #getSources <- function(df) {
+    # get a df from specific column names
+    #df <- df[, names(df) %in% c("COAL", "OIL", "GAS", "NUCLEAR", "HYDRO", "BIOMASS", "WIND", "SOLAR", "GEOTHERMAL", "OTHER")]
+    #sourceList <- apply(df[-1], 1, function(x) (names(which(x >0))))
+    #return (sourceList)
+  #}
+
 }
 
 # Run the application 
