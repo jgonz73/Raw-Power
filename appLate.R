@@ -1315,7 +1315,7 @@ server <- function(input, output) {
       setView(lat=39.8331, lng=-88.8985, zoom=6) %>%
       addCircleMarkers(data=df00IL, lng=df00IL$LON, lat=df00IL$LAT, radius=7,
                        color=~pal(types), stroke=FALSE, fillOpacity=1, label=paste("Source=", types)) %>%
-      addLegendCustom(colors = c("black", "black", "black"), labels = c("Generation > A", "Generation > B", "Generation > C"), sizes = c(6, 8, 10)) %>%
+      addLegendCustom(colors = c("black", "black", "black"), labels = c("Generation < 80000", "Generation < 150000", "Generation >= 150000"), sizes = c(6, 8, 10)) %>%
       addLegend("bottomright", pal=pal, values=types, title="Energy Sources", opacity=1) %>% 
       addControl(actionButton("zoomerLeft", "Reset"), position="bottomleft")
   })
@@ -1326,7 +1326,7 @@ server <- function(input, output) {
       setView(lat=39.8331, lng=-88.8985, zoom=6) %>%
       addCircleMarkers(data=df18IL, lng=df18IL$LON, lat=df18IL$LAT, radius=7,
                        color=~pal(types), stroke=FALSE, fillOpacity=1, label=paste("Source=", types)) %>%
-      addLegendCustom(colors = c("black", "black", "black"), labels = c("Generation > A", "Generation > B", "Generation > C"), sizes = c(6, 8, 10)) %>%
+      addLegendCustom(colors = c("black", "black", "black"), labels = c("Generation < 80000", "Generation < 150000", "Generation >= 150000"), sizes = c(6, 8, 10)) %>%
       addLegend("bottomright", pal=pal, values=types, title="Energy Sources", opacity=1) %>%
       addControl(actionButton("zoomerRight", "Reset"), position="bottomleft")
   })
@@ -1634,8 +1634,8 @@ server <- function(input, output) {
       setView(lat=37.0902, -95.7129, zoom=4) %>%
       addLegend("bottomright", pal=pal, values=types, title="Energy Sources", opacity=1) %>% #
       addCircleMarkers(data=df18, lng=df18$LON, lat=df18$LAT, radius=5, color=~pal(types), stroke=FALSE, fillOpacity=1, label=paste("Source=", types)) %>%
-      addLegendCustom(colors = c("black", "black", "black"), labels = c("Generation > A", "Generation > B", "Generation > C"), sizes = c(6, 8, 10)) %>%
-      addControl(actionButton("zoomer", "Reset"), position="bottomleft")
+      addLegendCustom(colors = c("black", "black", "black"), labels = c("Generation < 80000", "Generation < 150000", "Generation >= 150000"), sizes = c(6, 8, 10)) %>%
+      addControl(actionButton("zoomerRange", "Reset"), position="bottomleft")
   })
   
   #===================================================================================================================================== 
@@ -1747,7 +1747,7 @@ server <- function(input, output) {
   })
   
   observeEvent(input$zoomerRange, {
-    leafletProxy("rangeleaflet") %>% setView(lat=37.0902, lng=-95.7129, zoom=4)
+    leafletProxy("rangeLeaflet") %>% setView(lat=37.0902, lng=-95.7129, zoom=4)
   })
   
   #===================================================================================================================================== 
@@ -1775,11 +1775,11 @@ server <- function(input, output) {
   
   observeEvent(input$leafletRange, {
     if (input$leafletRange == "Leaflet 1") {
-      leafletProxy("rightleaflet") %>% clearMarkers() %>% addTiles()
+      leafletProxy("rangeLeaflet") %>% clearMarkers() %>% addTiles()
     } else if (input$leafletRange == "Leaflet 2") {
-      leafletProxy("rightleaflet") %>% clearMarkers() %>% addProviderTiles(providers$Stamen.Terrain)
+      leafletProxy("rangeLeaflet") %>% clearMarkers() %>% addProviderTiles(providers$Stamen.Terrain)
     } else {
-      leafletProxy("rightleaflet") %>% clearMarkers() %>% addProviderTiles(providers$Esri.WorldImagery)
+      leafletProxy("rangeLeaflet") %>% clearMarkers() %>% addProviderTiles(providers$Esri.WorldImagery)
     } 
   })
   
